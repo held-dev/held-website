@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 export const FlowNavigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { id: "pricing", label: "Pricing", href: "/pricing" },
@@ -48,13 +50,28 @@ export const FlowNavigation = () => {
             </div>
           </div>
 
-          {/* Right: Sign In */}
+          {/* Right: Auth */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/auth">
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <span className="text-sm text-foreground/70 max-w-[220px] truncate">
+                  {user.email ?? "Signed in"}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -88,15 +105,28 @@ export const FlowNavigation = () => {
                 </Link>
               ))}
 
-              {/* Mobile Sign In */}
+              {/* Mobile Auth */}
               <div className="pt-4 border-t border-border">
-                <Link
-                  to="/auth"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium text-foreground/80"
-                >
-                  Sign In
-                </Link>
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-foreground/80"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    to="/auth"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-base font-medium text-foreground/80"
+                  >
+                    Sign In
+                  </Link>
+                )}
               </div>
             </div>
           </div>

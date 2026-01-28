@@ -12,6 +12,40 @@ const Auth = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Handle OAuth callback (PKCE code exchange)
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+
+        // If Supabase redirected back with a PKCE code, we must exchange it for a session.
+        if (code) {
+          setLoading(true);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("OAuth code exchange error:", error);
+          }
+
+          // Remove OAuth params from the URL to prevent re-processing on refresh.
+          url.searchParams.delete("code");
+          url.searchParams.delete("state");
+          url.searchParams.delete("error");
+          url.searchParams.delete("error_description");
+          window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+
+          // Let AuthProvider update via onAuthStateChange; if we got a session, the redirect below will fire.
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("OAuth callback handling error:", err);
+        setLoading(false);
+      }
+    };
+
+    run();
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -74,19 +108,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
-  // Handle OAuth callback
-  useEffect(() => {
-    const handleAuthCallback = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // User is logged in, redirect handled by useAuth effect
-        navigate('/');
-      }
-    };
-
-    handleAuthCallback();
-  }, [navigate]);
 
   return (
     <div className="min-h-screen flex">
